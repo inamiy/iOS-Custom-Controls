@@ -13,7 +13,8 @@
 @interface MNESliderValuePopupView : UIView  
 @property (nonatomic) float value;
 @property (nonatomic, retain) UIFont *font;
-@property (nonatomic, retain) NSString *text;
+@property (nonatomic, copy) NSString *text;
+@property (nonatomic) float arrowOffset;
 @end
 
 @implementation MNESliderValuePopupView
@@ -21,6 +22,7 @@
 @synthesize value=_value;
 @synthesize font=_font;
 @synthesize text = _text;
+@synthesize arrowOffset = _arrowOffset;
 
 - (id)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -42,13 +44,21 @@
 	[[UIColor colorWithWhite:0 alpha:0.8] setFill];
 
     // Create the path for the rounded rectangle
-    CGRect roundedRect = CGRectMake(self.bounds.origin.x, self.bounds.origin.y, self.bounds.size.width, floorf(self.bounds.size.height * 0.8));
+    CGRect roundedRect = CGRectMake(self.bounds.origin.x + 3.0, self.bounds.origin.y, self.bounds.size.width - 6.0, floorf(self.bounds.size.height * 0.8));
     UIBezierPath *roundedRectPath = [UIBezierPath bezierPathWithRoundedRect:roundedRect cornerRadius:6.0];
     
     // Create the arrow path
     UIBezierPath *arrowPath = [UIBezierPath bezierPath];
-    CGFloat midX = CGRectGetMidX(self.bounds);
-    CGPoint p0 = CGPointMake(midX, CGRectGetMaxY(self.bounds));
+
+	// Make sure the arrow offset is nice
+	if (-self.arrowOffset + 1 > CGRectGetMidX(self.bounds) / 2)
+		self.arrowOffset = -CGRectGetMidX(self.bounds) / 2 + 1;
+	if (self.arrowOffset > CGRectGetMidX(self.bounds) / 2)
+		self.arrowOffset = CGRectGetMidX(self.bounds) / 2 -1;
+
+    CGFloat midX = CGRectGetMidX(self.bounds) + self.arrowOffset;
+	
+    CGPoint p0 = CGPointMake(midX, CGRectGetMaxY(self.bounds) - 1.0);
     [arrowPath moveToPoint:p0];
     [arrowPath addLineToPoint:CGPointMake((midX - 10.0), CGRectGetMaxY(roundedRect))];
     [arrowPath addLineToPoint:CGPointMake((midX + 10.0), CGRectGetMaxY(roundedRect))];
@@ -56,7 +66,9 @@
     
     // Attach the arrow path to the rounded rect
     [roundedRectPath appendPath:arrowPath];
-
+	CGContextRef context = UIGraphicsGetCurrentContext();
+	CGContextSetShadow(context, CGSizeMake(0.0, 1.0), 2.0);
+	CGContextSetShadowWithColor(context, CGSizeMake(0.0, 1.0), 2.5, [UIColor blackColor].CGColor);
     [roundedRectPath fill];
 
     // Draw the text
@@ -97,20 +109,26 @@
 }
 
 - (void)_fadePopupViewInAndOut:(BOOL)aFadeIn {
-    [UIView beginAnimations:nil context:NULL];
-    [UIView setAnimationDuration:0.5];
-    if (aFadeIn) {
-        valuePopupView.alpha = 1.0;
-    } else {
-        valuePopupView.alpha = 0.0;
-    }
-    [UIView commitAnimations];
+	[UIView animateWithDuration:0.5
+						  delay:0.0
+						options:UIViewAnimationOptionAllowUserInteraction
+					 animations:^{
+						 valuePopupView.alpha = (aFadeIn) ? 1.0 : 0.0;
+					 } completion:nil];
 }
 
 - (void)_positionAndUpdatePopupView {
     CGRect _thumbRect = self.thumbRect;
     CGRect popupRect = CGRectOffset(_thumbRect, 0, -floorf(_thumbRect.size.height * 1.5));
-    valuePopupView.frame = CGRectInset(popupRect, -20, -10);
+	popupRect = CGRectInset(popupRect, -20, -10);
+
+	if (popupRect.origin.x < 1)
+		popupRect.origin.x = 1;
+	else if (CGRectGetMaxX(popupRect) > CGRectGetMaxX(self.superview.bounds))
+		popupRect.origin.x = CGRectGetMaxX(self.superview.bounds) - CGRectGetWidth(popupRect) - 1.0;
+
+	valuePopupView.arrowOffset = CGRectGetMidX(_thumbRect) - CGRectGetMidX(popupRect);
+    valuePopupView.frame = popupRect;
     valuePopupView.value = (NSInteger)self.value;
 }
 
@@ -143,7 +161,7 @@
     // Fade in and update the popup view
     CGPoint touchPoint = [touch locationInView:self];
     // Check if the knob is touched. Only in this case show the popup-view
-    if(CGRectContainsPoint(CGRectInset(self.thumbRect, -12.0, -12.0), touchPoint)) {
+    if(CGRectContainsPoint(CGRectInset(self.thumbRect, -14.0, -12.0), touchPoint)) {
         [self _positionAndUpdatePopupView];
         [self _fadePopupViewInAndOut:YES]; 
     }
