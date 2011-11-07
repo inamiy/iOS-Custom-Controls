@@ -11,7 +11,7 @@
 #pragma mark - Private UIView subclass rendering the popup showing slider value
 
 @interface MNESliderValuePopupView : UIView  
-@property (nonatomic) float value;
+//@property (nonatomic) float value;
 @property (nonatomic, strong) UIFont *font;
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic) float arrowOffset;
@@ -19,7 +19,7 @@
 
 @implementation MNESliderValuePopupView
 
-@synthesize value=_value;
+//@synthesize value=_value;
 @synthesize font=_font;
 @synthesize text = _text;
 @synthesize arrowOffset = _arrowOffset;
@@ -80,11 +80,11 @@
     }
 }
 
-- (void)setValue:(float)aValue {
-    _value = aValue;
-    self.text = [NSString stringWithFormat:@"%4.2f", _value];
-    [self setNeedsDisplay];
-}
+//- (void)setValue:(float)aValue {
+//    _value = aValue;
+//    self.text = [NSString stringWithFormat:@"%4.2f", _value];
+//    [self setNeedsDisplay];
+//}
 
 @end
 
@@ -92,11 +92,15 @@
 
 @implementation MNEValueTrackingSlider
 
+@synthesize valueFormat = _valueFormat;
 @synthesize thumbRect;
 
 #pragma mark - Private methods
 
 - (void)_constructSlider {
+    self.valueFormat = @"%4.2f";
+    //self.valueFormat = @"%0.0f/%0.0f";
+    
     valuePopupView = [[MNESliderValuePopupView alloc] initWithFrame:CGRectZero];
     valuePopupView.backgroundColor = [UIColor clearColor];
     valuePopupView.alpha = 0.0;
@@ -115,16 +119,39 @@
 - (void)_positionAndUpdatePopupView {
     CGRect _thumbRect = self.thumbRect;
     CGRect popupRect = CGRectOffset(_thumbRect, 0, -floorf(_thumbRect.size.height * 1.5));
-	popupRect = CGRectInset(popupRect, -20, -10);
-
+	
+    switch (_numberOfValueFormatSpecifiers) {
+        case 1:
+            valuePopupView.text = [NSString stringWithFormat:_valueFormat,self.value];
+            break;
+        case 2:
+            valuePopupView.text = [NSString stringWithFormat:_valueFormat,self.value,self.maximumValue];
+            break;
+        default:
+            valuePopupView.text = nil;
+            break;
+    }
+    
+    CGSize textSize = [valuePopupView.text sizeWithFont:valuePopupView.font];
+    
+    popupRect = CGRectInset(popupRect, -textSize.width/2.0, -textSize.height/2.0);
+    
 	if (popupRect.origin.x < 1)
 		popupRect.origin.x = 1;
 	else if (CGRectGetMaxX(popupRect) > CGRectGetMaxX(self.superview.bounds))
 		popupRect.origin.x = CGRectGetMaxX(self.superview.bounds) - CGRectGetWidth(popupRect) - 1.0;
-
+    
 	valuePopupView.arrowOffset = CGRectGetMidX(_thumbRect) - CGRectGetMidX(popupRect);
     valuePopupView.frame = popupRect;
-    valuePopupView.value = (NSInteger)self.value;
+    //valuePopupView.value = (NSInteger)self.value;
+    
+    if (valuePopupView.text) {
+        valuePopupView.hidden = NO;
+        [valuePopupView setNeedsDisplay];
+    }
+    else {
+        valuePopupView.hidden = YES;
+    }
 }
 
 #pragma mark - Memory management
@@ -176,6 +203,13 @@
 }
 
 #pragma mark - Custom property accessors
+
+- (void)setValueFormat:(NSString *)valueFormat {
+    if (valueFormat != _valueFormat) {
+        _valueFormat = [valueFormat copy];
+        _numberOfValueFormatSpecifiers = [[valueFormat componentsSeparatedByString:@"%"] count]-1;
+    }
+}
 
 - (CGRect)thumbRect {
     CGRect trackRect = [self trackRectForBounds:self.bounds];

@@ -12,7 +12,11 @@
 
 @interface MNEValueTrackingSlider : UISlider {
     MNESliderValuePopupView *valuePopupView; 
+    
+    NSUInteger _numberOfValueFormatSpecifiers;
 }
+
+@property (nonatomic, copy) NSString* valueFormat;
 
 @property (nonatomic, readonly) CGRect thumbRect;
 
