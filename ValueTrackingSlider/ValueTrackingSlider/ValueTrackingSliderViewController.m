@@ -10,11 +10,6 @@
 
 @implementation ValueTrackingSliderViewController
 
-- (void)dealloc
-{
-    [slider release];
-    [super dealloc];
-}
 
 - (void)didReceiveMemoryWarning
 {

@@ -12,7 +12,7 @@
 
 @interface MNESliderValuePopupView : UIView  
 @property (nonatomic) float value;
-@property (nonatomic, retain) UIFont *font;
+@property (nonatomic, strong) UIFont *font;
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic) float arrowOffset;
 @end
@@ -32,11 +32,6 @@
     return self;
 }
 
-- (void)dealloc {
-    self.text = nil;
-    self.font = nil;
-    [super dealloc];
-}
 
 - (void)drawRect:(CGRect)rect {
     
@@ -150,10 +145,6 @@
     return self;
 }
 
-- (void)dealloc {
-    [valuePopupView release];
-    [super dealloc];
-}
 
 #pragma mark - UIControl touch event tracking
 
