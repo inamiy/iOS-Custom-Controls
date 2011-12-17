@@ -177,19 +177,23 @@
 
 - (BOOL)beginTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event {
     // Fade in and update the popup view
-    CGPoint touchPoint = [touch locationInView:self];
-    // Check if the knob is touched. Only in this case show the popup-view
-    if(CGRectContainsPoint(CGRectInset(self.thumbRect, -14.0, -12.0), touchPoint)) {
+    BOOL tracking = [super beginTrackingWithTouch:touch withEvent:event];
+    if (tracking) {
         [self _positionAndUpdatePopupView];
         [self _fadePopupViewInAndOut:YES]; 
     }
-    return [super beginTrackingWithTouch:touch withEvent:event];
+    
+    return tracking;
 }
 
 - (BOOL)continueTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event {
     // Update the popup view as slider knob is being moved
-    [self _positionAndUpdatePopupView];
-    return [super continueTrackingWithTouch:touch withEvent:event];
+    BOOL tracking = [super continueTrackingWithTouch:touch withEvent:event];
+    if (tracking) {
+        [self _positionAndUpdatePopupView];
+    }
+    
+    return tracking;
 }
 
 - (void)cancelTrackingWithEvent:(UIEvent *)event {
@@ -198,8 +202,9 @@
 
 - (void)endTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event {
     // Fade out the popoup view
-    [self _fadePopupViewInAndOut:NO];
     [super endTrackingWithTouch:touch withEvent:event];
+    [self _positionAndUpdatePopupView];
+    [self _fadePopupViewInAndOut:NO];
 }
 
 #pragma mark - Custom property accessors
